@@ -35,10 +35,7 @@ diagnosis_code_columns = ['ClmDiagnosisCode_1', 'ClmDiagnosisCode_2', 'ClmDiagno
                   'ClmDiagnosisCode_10',]
 
 procedure_code_columns = ['ClmProcedureCode_1', 'ClmProcedureCode_2', 'ClmProcedureCode_3', 
-                  'ClmProcedureCode_4', 'ClmProcedureCode_5', 'ClmProcedureCode_6']
-
-chronic_cond_columns =['ChronicCond_Heartfailure','ChronicCond_Diabetes','ChronicCond_IschemicHeart',"ChronicCond_Alzheimer","ChronicCond_KidneyDisease", "ChronicCond_Cancer","ChronicCond_ObstrPulmonary",
-        "ChronicCond_Depression","ChronicCond_Osteoporasis","ChronicCond_rheumatoidarthritis","ChronicCond_stroke"]        
+                  'ClmProcedureCode_4', 'ClmProcedureCode_5', 'ClmProcedureCode_6']     
 
 df_inpatient['Physician_group_String'] = df_inpatient[physician_columns].astype(str).apply(lambda row: '-'.join(row), axis=1)
 df_outpatient['Physician_group_String'] = df_outpatient[physician_columns].astype(str).apply(lambda row: '-'.join(row), axis=1)
@@ -46,7 +43,6 @@ df_inpatient['DiagnosisCode_group_String'] = df_inpatient[diagnosis_code_columns
 df_outpatient['DiagnosisCode_group_String'] = df_outpatient[diagnosis_code_columns].astype(str).apply(lambda row: '-'.join(row), axis=1)
 df_inpatient['procedureCode_group_String'] = df_inpatient[procedure_code_columns].astype(str).apply(lambda row: '-'.join(row), axis=1)
 df_outpatient['procedureCode_group_String'] = df_outpatient[procedure_code_columns].astype(str).apply(lambda row: '-'.join(row), axis=1)
-df_beneficiary['condition_group_String'] = df_beneficiary[chronic_cond_columns].astype(str).apply(lambda row: '-'.join(row), axis=1)
 
 category_columns = ['AttendingPhysician', 'OperatingPhysician',
        'OtherPhysician','ClmDiagnosisCode_1', 'ClmDiagnosisCode_2',
@@ -102,10 +98,7 @@ def provider_aggregation(df, prefix):
         'InscClaimAmtReimbursed': ['sum', 'mean'],
         'DeductibleAmtPaid': ['sum', 'mean'],
         f'{prefix}_ClaimDuration': ['mean', 'max'],
-        # 'ClaimID':'count',
         'RenalDiseaseIndicator':'nunique',
-        # 'BeneID':'count',
-        # 'age_group_string': 'nunique',
         'Gender': 'nunique',
         'Race': 'nunique',
         'State': 'nunique',
@@ -121,18 +114,10 @@ def provider_aggregation(df, prefix):
         "ChronicCond_Osteoporasis": 'nunique',
         "ChronicCond_rheumatoidarthritis": 'nunique',
         "ChronicCond_stroke": 'nunique',
-        # 'AttendingPhysician': 'nunique',
-        # 'OperatingPhysician': 'nunique',
-        # 'OtherPhysician': 'nunique',
         'Physician_group_String': 'nunique',
         'DiagnosisCode_group_String': 'nunique',
         'procedureCode_group_String': 'nunique',
-        # 'condition_group_String': 'nunique',
     }
-    # diag_cols = [f'ClmDiagnosisCode_{i}' for i in range(1, 11)]
-    # proc_cols = [f'ClmProcedureCode_{i}' for i in range(1, 7)]
-    # for col in diag_cols + proc_cols:
-    #     agg_dict[col] = 'nunique'
     grouped = df.groupby('Provider').agg(agg_dict)
     grouped.columns = [f"{prefix}_{col[0]}_{col[1]}" for col in grouped.columns]
     grouped.reset_index(inplace=True)
@@ -210,6 +195,3 @@ print("Best threshold for max F1:", best_threshold)
 
 # y_pred_custom = (y_probs > best_threshold).astype(int)
 # print(classification_report(y_test, y_pred_custom))
-
-
-model.get_booster().save_model("xgb_model.json")
