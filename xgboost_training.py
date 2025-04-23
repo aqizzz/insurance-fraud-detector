@@ -163,18 +163,18 @@ y = df_model['PotentialFraud']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 scale = len(y_train[y_train == 0]) / len(y_train[y_train == 1])
 
-model = XGBClassifier(use_label_encoder=False, eval_metric='logloss', scale_pos_weight=3927 / 401)
-model.fit(X_train, y_train)
+# model = XGBClassifier(use_label_encoder=False, eval_metric='logloss', scale_pos_weight=3927 / 401)
+# model.fit(X_train, y_train)
 
-y_pred_prob = model.predict_proba(X_test)[:, 1]  # 获取正类概率
-threshold = 0.42  # 默认是 0.5，可以尝试更低的值
-y_pred = (y_pred_prob > threshold).astype(int)
-# print(classification_report(y_test, y_pred))
+# y_pred_prob = model.predict_proba(X_test)[:, 1]  # 获取正类概率
+# threshold = 0.42  # 默认是 0.5，可以尝试更低的值
+# y_pred = (y_pred_prob > threshold).astype(int)
+# # print(classification_report(y_test, y_pred))
 
-roc_score = roc_auc_score(y_test, y_pred_prob)
-# print("AUC Score:", roc_score)
+# roc_score = roc_auc_score(y_test, y_pred_prob)
+# # print("AUC Score:", roc_score)
 
-print(y_train.value_counts())
+# print(y_train.value_counts())
 
 model = XGBClassifier(
     use_label_encoder=False,
@@ -193,23 +193,25 @@ model.fit(
 )
 
 y_proba = model.predict_proba(X_test)[:, 1]
+
+# Best threshold for max F1: 0.758483
 y_pred = (y_proba >= 0.758483).astype(int)
 
 print(classification_report(y_test, y_pred))
 print("AUC:", roc_auc_score(y_test, y_proba))
 
 
-y_probs = model.predict_proba(X_test)[:, 1]
-precisions, recalls, thresholds = precision_recall_curve(y_test, y_probs)
+# y_probs = model.predict_proba(X_test)[:, 1]
+# precisions, recalls, thresholds = precision_recall_curve(y_test, y_probs)
 
-# 找出 f1-score 最大对应的阈值
-f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-8)
-best_threshold = thresholds[np.argmax(f1_scores)]
+# # 找出 f1-score 最大对应的阈值
+# f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-8)
+# best_threshold = thresholds[np.argmax(f1_scores)]
 
-print("Best threshold for max F1:", best_threshold)
+# print("Best threshold for max F1:", best_threshold)
 
 # y_pred_custom = (y_probs > best_threshold).astype(int)
 # print(classification_report(y_test, y_pred_custom))
 
 
-model.get_booster().save_model("xgb_model.json")
+# model.get_booster().save_model("xgb_final_integrated_model.json")

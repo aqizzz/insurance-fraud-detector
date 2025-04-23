@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.metrics import classification_report, precision_recall_curve, roc_auc_score
+from sklearn.metrics import classification_report, roc_auc_score
 from xgboost import XGBClassifier
 
 
@@ -19,13 +19,6 @@ df_beneficiary['DOB'] = pd.to_datetime(df_beneficiary['DOB'], errors='coerce')
 reference_date = pd.to_datetime('2019-01-01')
 df_beneficiary['Age'] = (reference_date - df_beneficiary['DOB']).dt.days // 365
 
-# 定义年龄分组
-bins = [0, 40, 60, 80, 120]
-labels = ['0-40', '41-60', '61-80','81+']
-df_beneficiary['AgeGroup'] = pd.cut(df_beneficiary['Age'], bins=bins, labels=labels, right=True)
-
-df_beneficiary['age_group_string'] = df_beneficiary['AgeGroup'].astype(str)
-
 
 # 定义诊断码和手术码的列
 physician_columns = ['AttendingPhysician', 'OperatingPhysician','OtherPhysician', ]
@@ -35,7 +28,8 @@ diagnosis_code_columns = ['ClmDiagnosisCode_1', 'ClmDiagnosisCode_2', 'ClmDiagno
                   'ClmDiagnosisCode_10',]
 
 procedure_code_columns = ['ClmProcedureCode_1', 'ClmProcedureCode_2', 'ClmProcedureCode_3', 
-                  'ClmProcedureCode_4', 'ClmProcedureCode_5', 'ClmProcedureCode_6']     
+                  'ClmProcedureCode_4', 'ClmProcedureCode_5', 'ClmProcedureCode_6']
+      
 
 df_inpatient['Physician_group_String'] = df_inpatient[physician_columns].astype(str).apply(lambda row: '-'.join(row), axis=1)
 df_outpatient['Physician_group_String'] = df_outpatient[physician_columns].astype(str).apply(lambda row: '-'.join(row), axis=1)
@@ -88,8 +82,6 @@ for col in category_columns:
         df_inpatient[col] = LabelEncoder().fit_transform(df_inpatient[col].astype(str))
     if col in df_outpatient.columns:
         df_outpatient[col] = LabelEncoder().fit_transform(df_outpatient[col].astype(str))
-    # if col in df_labels.columns:
-    #     df_labels[col] = LabelEncoder().fit_transform(df_labels[col].astype(str))
 
 
 # 聚合函数定义
@@ -148,19 +140,6 @@ y = df_model['PotentialFraud']
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 scale = len(y_train[y_train == 0]) / len(y_train[y_train == 1])
 
-model = XGBClassifier(use_label_encoder=False, eval_metric='logloss', scale_pos_weight=3927 / 401)
-model.fit(X_train, y_train)
-
-y_pred_prob = model.predict_proba(X_test)[:, 1]  # 获取正类概率
-threshold = 0.42  # 默认是 0.5，可以尝试更低的值
-y_pred = (y_pred_prob > threshold).astype(int)
-# print(classification_report(y_test, y_pred))
-
-roc_score = roc_auc_score(y_test, y_pred_prob)
-# print("AUC Score:", roc_score)
-
-print(y_train.value_counts())
-
 model = XGBClassifier(
     use_label_encoder=False,
     eval_metric='logloss',
@@ -178,20 +157,9 @@ model.fit(
 )
 
 y_proba = model.predict_proba(X_test)[:, 1]
+
+# Best threshold for max F1: 0.758483
 y_pred = (y_proba >= 0.758483).astype(int)
 
 print(classification_report(y_test, y_pred))
 print("AUC:", roc_auc_score(y_test, y_proba))
-
-
-y_probs = model.predict_proba(X_test)[:, 1]
-precisions, recalls, thresholds = precision_recall_curve(y_test, y_probs)
-
-# 找出 f1-score 最大对应的阈值
-f1_scores = 2 * (precisions * recalls) / (precisions + recalls + 1e-8)
-best_threshold = thresholds[np.argmax(f1_scores)]
-
-print("Best threshold for max F1:", best_threshold)
-
-# y_pred_custom = (y_probs > best_threshold).astype(int)
-# print(classification_report(y_test, y_pred_custom))
